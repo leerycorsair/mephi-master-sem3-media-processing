@@ -18,7 +18,6 @@ def load_image(input_path: str) -> Optional[ImageType]:
 def save_image(image: ImageType, output_path: str) -> None:
     img = Image.fromarray(image)
     img.save(output_path)
-    print(f"Изображение сохранено по пути: {output_path}")
 
 
 def stretch_image(image: ImageType, m: float) -> ImageType:
