@@ -1,8 +1,7 @@
-from typing import Any, NewType, Tuple
+from typing import Any, NewType
 import numpy as np
 from PIL import Image
 import cv2
-
 
 ImageType = NewType("ImageType", np.ndarray[Any, np.dtype[np.uint8]])
 
@@ -11,46 +10,49 @@ def to_grayscale(image: ImageType) -> ImageType:
     return cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
 
-def to_binary(gradient_image: ImageType, threshold: int) -> ImageType:
-    _, binary_image = cv2.threshold(gradient_image, threshold, 255, cv2.THRESH_BINARY)
-    return binary_image
+def apply_scharr(image: ImageType) -> ImageType:
+    if not isinstance(image, np.ndarray):
+        raise TypeError("Входное изображение должно быть типа numpy.ndarray.")
+
+    if len(image.shape) != 2:
+        raise ValueError("Изображение должно быть в градациях серого (2D массив).")
+
+    scharr_x_kernel = np.array([[-3, 0, 3], [-10, 0, 10], [-3, 0, 3]], dtype=np.float64)
+
+    scharr_y_kernel = np.array([[-3, -10, -3], [0, 0, 0], [3, 10, 3]], dtype=np.float64)
+
+    scharr_x = convolve2d(image, scharr_x_kernel)
+    scharr_y = convolve2d(image, scharr_y_kernel)
+
+    magnitude = np.sqrt(scharr_x**2 + scharr_y**2)
+
+    magnitude = (magnitude / magnitude.max()) * 255
+    magnitude = magnitude.astype(np.uint8)
+
+    return ImageType(magnitude)
 
 
-def apply_filter(image: ImageType, kernel: ImageType) -> ImageType:
-    height, width = image.shape
-    kernel_size = kernel.shape[0]
-    pad = kernel_size // 2
-    padded_image = np.pad(image, pad, mode="constant", constant_values=0)
+def convolve2d(image: np.ndarray, kernel: np.ndarray) -> np.ndarray:
+    image_height, image_width = image.shape
+    kernel_height, kernel_width = kernel.shape
 
-    result = np.zeros_like(image)
+    pad_height = kernel_height // 2
+    pad_width = kernel_width // 2
 
-    for i in range(height):
-        for j in range(width):
-            window = padded_image[i : i + kernel_size, j : j + kernel_size]
-            result[i, j] = np.sum(window * kernel)
+    padded_image = np.pad(
+        image,
+        ((pad_height, pad_height), (pad_width, pad_width)),
+        mode="constant",
+        constant_values=0,
+    )
+    convolved = np.zeros_like(image, dtype=np.float64)
 
-    return result
+    for i in range(image_height):
+        for j in range(image_width):
+            region = padded_image[i : i + kernel_height, j : j + kernel_width]
+            convolved[i, j] = np.sum(region * kernel)
 
-
-def normalize(image: ImageType) -> ImageType:
-    return np.clip(
-        (image - image.min()) / (image.max() - image.min()) * 255, 0, 255
-    ).astype(np.uint8)
-
-
-def apply_scharr(image: ImageType) -> Tuple[ImageType, ImageType, ImageType]:
-    Gx_kernel = ImageType(np.array([[3, 0, -3], [10, 0, -10], [3, 0, -3]]))
-    Gy_kernel = ImageType(np.array([[3, 10, 3], [0, 0, 0], [-3, -10, -3]]))
-
-    Gx = apply_filter(image, Gx_kernel)
-    Gy = apply_filter(image, Gy_kernel)
-    G = ImageType(np.sqrt(Gx**2 + Gy**2))
-
-    Gx_normalized = normalize(Gx)
-    Gy_normalized = normalize(Gy)
-    G_normalized = normalize(G)
-
-    return Gx_normalized, Gy_normalized, G_normalized
+    return convolved
 
 
 def load_image(input_path: str) -> ImageType:

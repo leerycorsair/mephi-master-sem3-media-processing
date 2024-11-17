@@ -3,7 +3,6 @@ from tools import (
     apply_scharr,
     load_image,
     save_image,
-    to_binary,
     to_grayscale,
 )
 
@@ -35,13 +34,8 @@ def process_single_image(input_path: str, params: Params):
     grayscale_image = to_grayscale(input_image)
     save_processed_image(grayscale_image, "grayscale", input_path, params)
 
-    gx, gy, g = apply_scharr(grayscale_image)
-    save_processed_image(gx, "gx", input_path, params)
-    save_processed_image(gy, "gy", input_path, params)
-    save_processed_image(g, "g", input_path, params)
-
-    grayscale_g = to_binary(g, threshold=100)
-    save_processed_image(grayscale_g, "grayscale_g", input_path, params)
+    scharr_image = apply_scharr(grayscale_image)
+    save_processed_image(scharr_image, "scharr", input_path, params)
 
 
 def process_images_in_folder(input_dir: str, params: Params):
