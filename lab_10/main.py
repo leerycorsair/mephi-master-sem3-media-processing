@@ -1,9 +1,10 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.io import wavfile
-from scipy.signal import spectrogram, find_peaks
-from scipy.signal.windows import hann
 import os
+
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.io import wavfile
+from scipy.signal import find_peaks, spectrogram
+from scipy.signal.windows import hann
 
 
 def plot_spectrogram(filename, output_image):
@@ -187,8 +188,8 @@ def find_high_energy_moments(filename, delta_t=0.1, energy_threshold=0.8):
 def main():
     sounds = {
         "barking": "barking.wav",
-        # 'voice_a': 'voice_a.wav',
-        # 'voice_e': 'voice_e.wav',  
+        'voice_a': 'voice_a.wav',
+        'voice_e': 'voice_e.wav',  
     }
 
     for label, file in sounds.items():
